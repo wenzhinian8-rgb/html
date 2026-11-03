@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>关于你的小调查</title>
+<style>
+:root{--red:#c4001d;--blood:#ff2a48;--text:#f6ecec;--dim:#b9a3a3;color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#000 !important;color:var(--text);overflow-x:hidden}
+body{font-family:-apple-system,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;line-height:1.7;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+.wrap{min-height:100%;max-width:560px;margin:0 auto;padding:18px 20px 40px;display:flex;flex-direction:column}
+.top{display:flex;align-items:center;gap:10px;font-size:.85rem;color:var(--dim)}
+.bar{flex:1;height:6px;background:#2a1010}
+.bar i{display:block;height:100%;width:100%;background:var(--blood);box-shadow:0 0 8px var(--blood);transition:width .3s}
+#stage{flex:1;display:flex;flex-direction:column;justify-content:center;padding:28px 0}
+.cnt{color:var(--dim);font-size:.9rem;margin-bottom:10px}
+h1,h2{color:#fff;margin:0 0 24px;line-height:1.5;font-weight:700}
+h1{font-size:2.3rem;letter-spacing:.15em;color:var(--blood)}
+h2{font-size:1.6rem}
+@keyframes gl{0%,90%,100%{text-shadow:0 0 12px rgba(255,42,72,.55);transform:none}
+92%{text-shadow:3px 0 #f00,-3px 0 #700;transform:translateX(3px)}95%{text-shadow:-3px 0 #f00,3px 0 #700;transform:translateX(-3px)}97%{opacity:.5}}
+.in{animation:in .3s both}
+@keyframes in{from{opacity:0}to{opacity:1}}
+.opt{display:block;width:100%;text-align:left;font:inherit;font-size:1.1rem;font-weight:500;color:#fff;background:#160707;border:1px solid #6a1220;border-left:4px solid var(--blood);padding:14px 15px;margin:0 0 11px;cursor:pointer;transition:transform .2s,background .2s}
+.opt:hover{background:#260b0f}
+.opt.on{background:var(--red);color:#fff;box-shadow:0 0 16px rgba(255,42,72,.6)}
+.opt.dead{text-decoration:line-through;color:#7d6666;border-color:#2a1010;border-left-color:#2a1010;cursor:not-allowed;background:#0a0505}
+.go{font:inherit;font-size:1.05rem;background:var(--red);color:#fff;border:0;padding:14px 32px;letter-spacing:.3em;cursor:pointer;margin-top:6px}
+.go:hover{background:var(--blood)}
+.go.ghost{background:transparent;border:1px solid var(--blood);letter-spacing:.1em}
+textarea{width:100%;min-height:120px;background:#120707;color:#fff;border:1px solid #6a1220;padding:12px;font:inherit;font-size:1.05rem;resize:vertical;margin-bottom:10px}
+button:focus-visible,textarea:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#msg{min-height:2.4em;color:var(--blood);font-size:1.15rem;font-weight:700;margin:8px 0 0;text-shadow:0 0 8px rgba(255,42,72,.5)}
+#wh{text-align:center;color:#9a8080;font-size:.85rem}
+#fl{position:fixed;inset:0;background:var(--blood);opacity:0;pointer-events:none;z-index:20}
+#fl.a{animation:fl .35s}
+@keyframes fl{0%{opacity:.6}100%{opacity:0}}
+.shake{animation:sk .45s}
+@keyframes sk{0%,100%{transform:none}15%{transform:translate(-10px,4px) rotate(-.7deg)}30%{transform:translate(9px,-5px) rotate(.7deg)}45%{transform:translate(-8px,-3px)}60%{transform:translate(7px,5px)}80%{transform:translate(-3px,2px)}}
+#rage{position:fixed;inset:0;background:#000;z-index:30;display:none;align-items:center;justify-content:center;text-align:center;color:var(--blood);font-size:1.8rem;font-weight:700;letter-spacing:.15em;padding:30px;white-space:pre-line;animation:gl .3s infinite}
+pre{white-space:pre-wrap;word-break:break-all;background:#120707;border:1px solid #6a1220;padding:14px;font:inherit;font-size:.9rem;max-height:46vh;overflow:auto;color:#fff}
+.sub{color:var(--dim);font-size:.95rem;font-weight:400}
+@media (prefers-reduced-motion:reduce){h1,h2,.shake,#rage{animation:none}}
+</style>
+</head>
+<body>
+<div id="fl"></div><div id="rage"></div>
+<div class="wrap">
+<div class="top"><span>我的耐心</span><div class="bar"><i id="pb"></i></div><span id="pn">100%</span></div>
+<div id="stage"></div>
+<div id="wh">我在看着你</div>
+</div>
+<script>
+const Q=[
+{t:"你知道我是谁吗？",o:[{t:"知道",say:"……真的吗？我好开心。"},{t:"不知道",ban:["怎么会不知道？","你再想想。","我们见过很多次了。"]},{t:"好像有点印象",say:"只是有点吗……没关系。"},{t:"你是谁？",ban:["别装了。","你知道的。","我就在你身边。"]}]},
+{t:"你是什么时候第一次注意到我的？",o:["很早以前","某次擦肩而过","刚刚才注意到",{t:"从来没注意过",ban:["我每天都在。","你怎么能没看到我。","……我好难过。"]}]},
+{t:"你觉得我平时离你有多远？",o:[{t:"很远",ban:["不对。","再选一次。","没有很远。"]},"在同一栋楼里","就在附近",{t:"比你想的更近",say:"嗯。就是这个。"}]},
+{t:"你有没有觉得，总有一道视线跟着你？",o:[{t:"有",say:"你感觉到了。我好开心。"},{t:"没有",ban:["再感觉一下。","我看了你整整一天。"]},"不确定",{t:"一直都有",say:"那是我。"}]},
+{t:"你今天几点起床的？",o:["六点以前","七到八点","九点以后",{t:"还没睡",say:"……我也没睡。我在想你。"}]},
+{t:"你回家那条路，安全吗？",o:["很安全","一般","有点黑",{t:"感觉有人跟着我",ban:["……谁？","不准选这个。","这个选项我删了。"]}]},
+{t:"你更喜欢什么天气？",o:["下雨天","阴天","起雾的夜晚",{t:"大晴天",ban:["晴天太亮了，你会被别人看见。","不准选。","求你了。"]}]},
+{t:"你一个人的时候，最常做什么？",o:["刷手机","发呆","听歌",{t:"回头看看有没有人",say:"没有人。只有我。"}]},
+{t:"你的消息，已读之后一般多久回？",o:["秒回","半小时内","看心情",{t:"不回",ban:["你敢不回？","我会一直等。","你不会的。"]}]},
+{t:"如果有人每天默默给你点赞，你会？",o:["有点开心","完全没注意","想知道是谁",{t:"觉得有点奇怪",ban:["哪里奇怪？","我只是点了个赞。","好吧。我记住了。"]}]},
+{t:"你喜欢什么颜色？",o:["黑色","红色","白色","其实我都记得你穿过什么"]},
+{t:"你有喜欢的人吗？",o:["没有",{t:"有",ban:["是谁？","谁？！","告诉我是谁。","……我会知道的。"]},{t:"不告诉你",say:"没关系，我会自己查。"},"你面前这个人"]},
+{t:"被人一直在背后看着，你觉得？",o:["背后发凉","其实有点浪漫","无所谓",{t:"想报警",run:1}]},
+{t:"你睡前最后看的是什么？",o:["手机","天花板","窗外","聊天框"]},
+{t:"你的秘密一般告诉谁？",o:["朋友","家人","树洞",{t:"别的什么人",ban:["什么人？","不准有别的人。","只能是我。"]}]},
+{t:"你昨天下午去了哪里？",o:["在家","学校或公司","出去玩了",{t:"不想说",ban:["我可以告诉你。","你昨天下午在……","算了。我都知道。"]}]},
+{t:"你常去的那家店，一般坐哪个位置？",o:[{t:"靠窗",say:"我知道。我坐在你斜后方。"},"靠墙","角落",{t:"我从来不去",ban:["你去过。","我见过你。"]}]},
+{t:"你现在是一个人住吗？",o:[{t:"一个人",say:"……太好了。"},"和家人","和室友",{t:"不告诉你",ban:["你不说我也知道。","几楼来着。","算了。"]}]},
+{t:"你会把喜欢的人的东西偷偷留下吗？",o:["会","不会","留过一次",{t:"这是什么变态问题",ban:["……是吗。","不准这么说我。","我受伤了。"]}]},
+{t:"哪些行为，算是“喜欢”？",m:1,o:["默默记住你的生日","总出现在你会经过的地方","存下你说过的每一句话","盯着你的头像看很久","假装偶遇",{t:"以上都不算",ban:["你再看一遍。","你在撒谎。","选错了。我帮你选吧。"]}]},
+{t:"你觉得我是个怎样的人？",o:["很安静","有点阴","有点奇怪",{t:"很可怕",run:1}]},
+{t:"你讨厌被人跟踪吗？",o:[{t:"很讨厌",ban:["那我呢？","你也讨厌我吗？","……我不信。"]},"看是谁","无所谓",{t:"想被某个人跟踪",say:"……我记住了。"}]},
+{t:"如果我现在就站在你身后，你会？",o:["回头","装作不知道",{t:"报警",ban:["……你想让我消失吗？","不准。","我现在就站在你门外。"]},{t:"笑着说“我知道”",say:"……你果然知道。"}]},
+{t:"你相信一见钟情吗？",o:["相信","不信","信，但只信暗处的那种",{t:"我不信爱情",ban:["我会让你信的。","我有很多时间。"]}]},
+{t:"如果我的相册里，存满了你的照片，你会？",o:[{t:"让他全部删掉",ban:["不准删。","每一张我都留着。","我备份了。"]},"想看看","有点害怕","说声谢谢"]},
+{t:"你会拉黑我吗？",o:[{t:"会",ban:["你不会的。","你拉黑不了。","我有别的号。"]},"不会","看情况",{t:"拉黑了也没用",say:"对。你懂我。"}]},
+{t:"想对我说一句话吗？",x:1},
+{t:"如果有一天，我突然消失了，你会？",o:[{t:"无所谓",ban:["你撒谎。","你会想我的。","……你会想我的。"]},"到处找我",{t:"松一口气",run:1},"会想我"]},
+{t:"如果我喜欢你很久了，你愿意给我一次机会吗？",o:["愿意","让我想想",{t:"不愿意",flip:"愿意"},{t:"我已经跑不掉了",say:"对。"}]},
+{t:"最后一题。你现在，是不是不敢关掉这个页面？",o:["是",{t:"不是",ban:["你的手在抖。","说谎。"]},{t:"我想关掉",ban:["关不掉的。","你关掉，我也在。","……别关。"]},"你想让我继续吗"]}
+];
+const $=s=>document.querySelector(s),stage=$("#stage"),WH=["我在看着你","别离开这个页面","你的呼吸，变快了","我知道你在看","不要关掉","选错的话，我会难过的","你刚才犹豫了","我就在你旁边"];
+const RG=["你一直在试探我的底线。\n别再点了。","我说了\n不 准 选。","……你是不是\n想逼我。","够了。\n你是我的。"];
+let i=-1,pat=100,tries=0,lock=false,sel=new Set(),log=[],rageDone=0;
+function vib(){try{navigator.vibrate&&navigator.vibrate([90,40,90])}catch(e){}}
+function shake(){document.body.classList.remove("shake");void document.body.offsetWidth;document.body.classList.add("shake")}
+function flash(){const f=$("#fl");f.classList.remove("a");void f.offsetWidth;f.classList.add("a")}
+function upd(){const p=Math.max(pat,0);$("#pb").style.width=p+"%";$("#pn").textContent=Math.round(p)+"%"}
+function say(m){$("#msg").textContent=m}
+function hit(n){pat-=n;upd();shake();flash();vib();if(pat<=0&&rageDone<RG.length)rage()}
+function rage(){const r=$("#rage");r.textContent=RG[rageDone++];r.style.display="flex";vib();setTimeout(()=>{r.style.display="none";pat=40;upd()},2400)}
+function next(d=800){lock=true;setTimeout(()=>{pat-=5;upd();render()},d)}
+function ans(a){log.push({q:Q[i].t,a})}
+function render(){
+ i++;lock=false;sel=new Set();$("#wh").textContent=WH[Math.floor(Math.random()*WH.length)];
+ if(i>=Q.length)return end();
+ const q=Q[i];
+ stage.innerHTML=`<div class="in"><div class="cnt">${i+1} / ${Q.length}</div><h2>${q.t}${q.m?'<br><span class="sub">可多选</span>':''}</h2><div id="os"></div><div id="msg"></div></div>`;
+ const os=$("#os");
+ if(q.x){os.innerHTML='<textarea id="tx" placeholder="写在这里，我会认真看的……"></textarea><button class="go" id="ok">交给我</button>';
+  $("#ok").onclick=()=>{if(lock)return;const v=$("#tx").value.trim();ans(v||"（沉默）");say(v?"我会反复看很多遍的。":"沉默也是一种回答。我记下了。");next(1100)};return}
+ q.o.forEach(o=>{o=typeof o=="string"?{t:o}:o;const b=document.createElement("button");b.className="opt";b.textContent=o.t;os.appendChild(b);
+  if(o.run){let c=0,t0=0;const dodge=e=>{if(lock||b.disabled)return;e.preventDefault();const n=Date.now();if(n-t0<300)return;t0=n;c++;
+    if(c>4){b.className="opt dead";b.textContent="（被我删掉了）";b.disabled=true;say("不准选这个。");hit(10);return}
+    b.style.transform=`translate(${(Math.random()-.5)*110}px,${(Math.random()-.5)*50}px)`;say(["别点我。","你抓不到的。","……","还想点？"][c-1])};
+   b.addEventListener("pointerenter",dodge);b.addEventListener("pointerdown",dodge);return}
+  b.onclick=()=>{if(lock||b.disabled)return;
+   if(o.ban){tries++;o.n=o.n||0;say(o.ban[o.n]);o.n++;hit(18);if(o.n>=o.ban.length){b.className="opt dead";b.disabled=true}return}
+   if(o.flip){b.textContent=o.flip;b.classList.add("on");say("你点错了吧？我帮你改好了。");shake();vib();ans(o.flip+"（其实点的是“"+o.t+"”）");next(1900);return}
+   if(q.m){sel.has(o.t)?(sel.delete(o.t),b.classList.remove("on")):(sel.add(o.t),b.classList.add("on"));return}
+   b.classList.add("on");ans(o.t);say(o.say||"");next(o.say?1500:700)}});
+ if(q.m){const g=document.createElement("button");g.className="go";g.textContent="确 定";os.appendChild(g);
+  g.onclick=()=>{if(lock)return;if(!sel.size){say("至少选一个。别不理我。");return}ans([...sel].join("、"));say("好。我都记下了。");next(1000)}}
+}
+function end(){
+ const t="【关于你的小调查】\n"+log.map((l,k)=>`${k+1}. ${l.q}\n   → ${l.a}`).join("\n")+`\n\n你偷偷点过不准选的选项：${tries} 次\n我剩下的耐心：${Math.max(pat,0)}%`;
+ stage.innerHTML=`<div class="in"><h2>谢谢你。我都记下来了。</h2><p class="sub">下面是你的回答，复制后发给我。别想改，我已经看到了。</p><pre id="out"></pre><button class="go ghost" id="cp">复制回答</button></div>`;
+ $("#out").textContent=t;$("#wh").textContent="你逃不掉的。";
+ $("#cp").onclick=async function(){try{await navigator.clipboard.writeText(t);this.textContent="已复制。我等你。"}catch(_){const r=document.createRange();r.selectNodeContents($("#out"));getSelection().removeAllRanges();getSelection().addRange(r);this.textContent="已选中，请手动复制"}}}
+stage.innerHTML='<div class="in"><h1>关于你的小调查</h1><p class="sub">受访者：你　编号：0001</p><p>请认真回答，别选错。<br>我只是……想多了解你一点点。</p><button class="go" id="st">开 始</button></div>';
+$("#st").onclick=()=>{render()};
+setInterval(()=>{if(Math.random()<.35&&i>=0&&i<Q.length)$("#wh").textContent=WH[Math.floor(Math.random()*WH.length)]},4000);
+</script>
+</body>
+</html>
